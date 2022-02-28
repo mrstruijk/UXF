@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: 8f35ab7d1f6e34fe78006eafa43d9ce4
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Broken Glass
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: b69f5f61a60ca4dafa0688519884c284, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
