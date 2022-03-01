@@ -20,17 +20,19 @@ public class TrialManager : MonoBehaviour
 	public float ChangeITI = 0.1f;
 
 	private List<string> _characterList = new();
-	private readonly List<string> _previousCharacters = new();
+	[SerializeField] private List<string> _previousCharacters;
 	private string _current;
 
 	[Range(0, 100)] public int PercentageNLikely = 60;
 
 	public ParticleSystem SuccessParticles;
-	private bool _keyed;
+	private const float _successTrialInterval = 0.5f;
 	private const float _missedTrialInterval = 0.5f;
 
 
 	private CancellationTokenSource _cts = new CancellationTokenSource();
+
+	private int numberofTrials;
 
 
 	private void Start()
@@ -49,6 +51,11 @@ public class TrialManager : MonoBehaviour
 		{
 			_characterList = session.settings.GetStringList("numbers");
 		}
+
+		var numPracticeTrials = session.settings.GetInt("n_practice_trials");
+		var numMainTrials = session.settings.GetInt("n_main_trials");
+		numberofTrials = numPracticeTrials + numMainTrials;
+		_previousCharacters = new List<string>(new string[numberofTrials]);
 	}
 
 
@@ -61,70 +68,121 @@ public class TrialManager : MonoBehaviour
 	private async Task TrialRunner(Trial trial)
 	{
 		_current = GetWeighedRandomCharacter(trial);
-
 		TextField.text = _current;
-		_keyed = false;
+
+		_previousCharacters[trial.number - 1] = _current;
 
 		_trialDuration = trial.block.settings.GetFloat("trialDuration");
-		await Task.Delay((int)(_trialDuration * 1000));
+		var trialCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+		var trialFinished = await Task.WhenAny(WaitForKeyPress(trialCts.Token, trial), Missed(trialCts.Token, trial, _trialDuration));
+		await trialFinished;
 
 		TextField.text = null;
 
-		if (_keyed == false && CanUseNBack(trial) == true && _current == _previousCharacters[^nBack])
+		_interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
+		await Delayer(trialCts.Token, _interTrialInterval);
+
+		trialCts.Cancel();
+		trialCts.Dispose();
+
+		trial.session.EndCurrentTrial();
+	}
+
+
+	private static async Task Delayer(CancellationToken ct, float seconds)
+	{
+		await Task.Delay((int)(seconds * 1000), ct);
+	}
+
+
+	private async Task Missed(CancellationToken ct, Trial trial, float trialDuration)
+	{
+		await Delayer(ct, trialDuration);
+
+		if (trial.number <= 1)
+		{
+			return;
+		}
+
+		if (_current == _previousCharacters[^nBack])
 		{
 			TextField.text = "MISSED";
+
+			await Delayer(ct, _missedTrialInterval);
 
 			trial.block.settings.SetValue("trialDuration", _trialDuration + ChangeTrialTime);
 			trial.block.settings.SetValue("interTrialInterval", _interTrialInterval + ChangeITI);
 			_trialDuration = trial.block.settings.GetFloat("trialDuration");
 			_interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
 
-			await Task.Delay((int)(_missedTrialInterval * 1000));
-
 			TextField.text = "";
 		}
-
-		_interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
-
-		await Task.Delay((int)(_interTrialInterval * 1000));
-
-
-		var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
-		var finished = await Task.WhenAny(Delayer(linkedCts.Token), Delayer1(linkedCts.Token));
-		await finished;
-		linkedCts.Cancel();
-		linkedCts.Dispose();
-		_cts = new CancellationTokenSource();
-
-		_previousCharacters.Add(_current);
-		trial.session.EndCurrentTrial();
-
 	}
 
 
-	private async Task Delayer1(CancellationToken ct)
+	private async Task WaitForKeyPress(CancellationToken ct, Trial trial)
 	{
-		await Task.Delay(5000, ct);
-		Debug.Log("Time's up!");
-	}
-
-
-	private async Task Delayer(CancellationToken ct)
-	{
-		while (!Input.GetKeyDown(KeyCode.Return) && ct.IsCancellationRequested == false)
+		while (!Input.GetKeyDown(KeyCode.Space) && ct.IsCancellationRequested == false)
 		{
-			Debug.Log("No key yet");
+			// Debug.Log("No key yet");
 			await Task.Yield();
 		}
 
-		if (Input.GetKeyDown(KeyCode.Return))
+		if (Input.GetKeyDown(KeyCode.Space))
 		{
 			Debug.Log("Pressee le qui");
+
+			if (trial.number <= nBack)
+			{
+				InCorrectResponse(ct, trial);
+			}
+			else if (_current == _previousCharacters[^ nBack])
+			{
+				CorrectResponse(ct, trial);
+			}
+			else
+			{
+				InCorrectResponse(ct, trial);
+			}
+
+			_trialDuration = trial.settings.GetFloat("trialDuration");
+			_interTrialInterval = trial.settings.GetFloat("interTrialInterval");
 		}
 		else if (ct.IsCancellationRequested == true)
 		{
 			Debug.Log("Cancellated");
 		}
+	}
+
+
+	private async void InCorrectResponse(CancellationToken ct, Trial trial)
+	{
+		TextField.text = "NOPE!";
+
+		trial.settings.SetValue("trialDuration", _trialDuration + ChangeTrialTime);
+		trial.settings.SetValue("interTrialInterval", _interTrialInterval + ChangeITI);
+
+		await Delayer(ct, _missedTrialInterval);
+	}
+
+
+
+	private async void CorrectResponse(CancellationToken ct, Trial trial)
+	{
+		TextField.text = "";
+		SuccessParticles.Play();
+
+		if (_trialDuration - ChangeTrialTime > 0)
+		{
+			trial.settings.SetValue("trialDuration", _trialDuration - ChangeTrialTime);
+		}
+
+		if (_interTrialInterval - ChangeITI > 0.1f)
+		{
+			trial.settings.SetValue("interTrialInterval", _interTrialInterval - ChangeITI);
+		}
+
+		await Delayer(ct, _successTrialInterval);
 	}
 
 
@@ -159,54 +217,32 @@ public class TrialManager : MonoBehaviour
 	}
 
 
-	private void Update()
-	{
-		if (!Input.GetKeyDown(KeyCode.Space))
-		{
-			return;
-		}
-
-		if (Session.instance.CurrentTrial.number < nBack)
-		{
-			SuccessParticles.Play();
-			TextField.text = "";
-			return;
-		}
-
-		var settings = Session.instance.CurrentBlock.settings;
-
-		if (_current == _previousCharacters[^ nBack])
-		{
-			SuccessParticles.Play();
-			TextField.text = "";
-
-			if (_trialDuration - ChangeTrialTime > 0)
-			{
-				settings.SetValue("trialDuration", _trialDuration - ChangeTrialTime);
-			}
-
-			if (_interTrialInterval - ChangeITI > 0.1f)
-			{
-				settings.SetValue("interTrialInterval", _interTrialInterval - ChangeITI);
-			}
-		}
-		else
-		{
-			TextField.text = "NOPE!";
-
-			settings.SetValue("trialDuration", _trialDuration + ChangeTrialTime);
-			settings.SetValue("interTrialInterval", _interTrialInterval + ChangeITI);
-		}
-
-		_trialDuration = settings.GetFloat("trialDuration");
-		_interTrialInterval = settings.GetFloat("interTrialInterval");
-
-		_keyed = true;
-	}
-
-
 	private void OnDisable()
 	{
 		_cts.Cancel();
 	}
 }
+
+/*
+ *	private async void WorkingAsyncCaller()
+	{
+		var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+		var finished = await Task.WhenAny(WaitForKeyPress(linkedCts.Token), Delayer1(linkedCts.Token));
+		await finished;
+		linkedCts.Cancel();
+		linkedCts.Dispose();
+		_cts = new CancellationTokenSource();
+	}
+ *
+ *
+ * 	private async Task Delayer1(CancellationToken ct)
+	{
+		await Task.Delay(5000, ct);
+		Debug.Log("Time's up!");
+	}
+ *
+ *
+ */
+
+
+
