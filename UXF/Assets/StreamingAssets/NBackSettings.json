@@ -4,5 +4,5 @@
   "n_practice_trials" : 25,
   "n_main_trials" : 50,
   "trialDuration" : 1,
-  "interTrialInterval" : 0.5
+  "interTrialInterval" : 0.5,
 }
