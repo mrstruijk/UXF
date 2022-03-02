@@ -1,26 +1,25 @@
-using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UXF;
-using Random = UnityEngine.Random;
+using Debug = UnityEngine.Debug;
 
 
 public class TrialManager : MonoBehaviour
 {
+	[SerializeField] private ShowMan _showMan;
 	[Range(0, 10)] public int nBack = 1;
-	public bool UseLetters;
 	private float _trialDuration = 2f;
 	private float _interTrialInterval = 0.25f;
 	public TextMeshProUGUI TextField;
 	public float ChangeTrialTime = 0.25f;
 	public float ChangeITI = 0.1f;
 
-	private List<string> _characterList = new();
-	[SerializeField] private List<string> _previousCharacters;
+	[SerializeField] public List<string> _previousCharacters;
 	private string _current;
 
 	[Range(0, 100)] public int PercentageNLikely = 60;
@@ -33,29 +32,13 @@ public class TrialManager : MonoBehaviour
 	private CancellationTokenSource _cts = new CancellationTokenSource();
 
 	private int numberofTrials;
+	[SerializeField] private TrialGenerator _trialGenerator;
 
 
 	private void Start()
 	{
 		_cts = new CancellationTokenSource();
-	}
-
-
-	public void GetInitialValuesFromSettings(Session session)
-	{
-		if (UseLetters == true)
-		{
-			_characterList = session.settings.GetStringList("letters");
-		}
-		else
-		{
-			_characterList = session.settings.GetStringList("numbers");
-		}
-
-		var numPracticeTrials = session.settings.GetInt("n_practice_trials");
-		var numMainTrials = session.settings.GetInt("n_main_trials");
-		numberofTrials = numPracticeTrials + numMainTrials;
-		_previousCharacters = new List<string>(new string[numberofTrials]);
+		_previousCharacters = new List<string>();
 	}
 
 
@@ -68,19 +51,20 @@ public class TrialManager : MonoBehaviour
 	private async Task TrialRunner(Trial trial)
 	{
 		_current = GetWeighedRandomCharacter(trial);
-		TextField.text = _current;
 
-		_previousCharacters[trial.number - 1] = _current;
+		_showMan.DisplayText(_current);
+
+		_previousCharacters.Add(_current);
 
 		_trialDuration = trial.block.settings.GetFloat("trialDuration");
 		var trialCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
 		var trialFinished = await Task.WhenAny(WaitForKeyPress(trialCts.Token, trial), Missed(trialCts.Token, trial, _trialDuration));
 		await trialFinished;
 
-		TextField.text = null;
+		_showMan.DisplayText(null);
 
-		_interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
-		await Delayer(trialCts.Token, _interTrialInterval);
+		/// _interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
+		await Delayer(trialCts.Token, 5);
 
 		trialCts.Cancel();
 		trialCts.Dispose();
@@ -99,14 +83,14 @@ public class TrialManager : MonoBehaviour
 	{
 		await Delayer(ct, trialDuration);
 
-		if (trial.number <= 1)
+		if (trial.number <= nBack)
 		{
 			return;
 		}
 
-		if (_current == _previousCharacters[^nBack])
+		if (_current == _previousCharacters[_previousCharacters.Count -1 -nBack])
 		{
-			TextField.text = "MISSED";
+			_showMan.DisplayText("MISSED");
 
 			await Delayer(ct, _missedTrialInterval);
 
@@ -115,7 +99,7 @@ public class TrialManager : MonoBehaviour
 			_trialDuration = trial.block.settings.GetFloat("trialDuration");
 			_interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
 
-			TextField.text = "";
+			_showMan.DisplayText(null);
 		}
 	}
 
@@ -136,7 +120,7 @@ public class TrialManager : MonoBehaviour
 			{
 				InCorrectResponse(ct, trial);
 			}
-			else if (_current == _previousCharacters[^ nBack])
+			else if (_current == _previousCharacters[_previousCharacters.Count -1 -nBack])
 			{
 				CorrectResponse(ct, trial);
 			}
@@ -157,14 +141,13 @@ public class TrialManager : MonoBehaviour
 
 	private async void InCorrectResponse(CancellationToken ct, Trial trial)
 	{
-		TextField.text = "NOPE!";
+		_showMan.DisplayText("NOPE");
 
 		trial.settings.SetValue("trialDuration", _trialDuration + ChangeTrialTime);
 		trial.settings.SetValue("interTrialInterval", _interTrialInterval + ChangeITI);
 
 		await Delayer(ct, _missedTrialInterval);
 	}
-
 
 
 	private async void CorrectResponse(CancellationToken ct, Trial trial)
@@ -188,19 +171,26 @@ public class TrialManager : MonoBehaviour
 
 	private string GetWeighedRandomCharacter(Trial trial)
 	{
+		string current;
+
 		if (CanUseNBack(trial) == false)
 		{
-			return _characterList[Random.Range(0, _characterList.Count)];
+			current = _trialGenerator._characterList[Random.Range(0, _trialGenerator._characterList.Count)];
+			Debug.LogErrorFormat("Canno use Nback, has to be {0}", current);
+			return current;
 		}
 
 		if (IsNBackTrial() == true)
 		{
-			return _previousCharacters[^nBack];
+			current = _previousCharacters[_previousCharacters.Count -1 -nBack];
+			Debug.LogErrorFormat("Nback = {0}", current);
+			return current;
 		}
 
 		List<string> excludedList = new();
-		excludedList.AddRange(_characterList.Where(characters => characters != _previousCharacters[^nBack]));
-		var current = excludedList[Random.Range(0, excludedList.Count)];
+		excludedList.AddRange(_trialGenerator._characterList.Where(characters => characters != _previousCharacters[_previousCharacters.Count -1 -nBack]));
+		current = excludedList[Random.Range(0, excludedList.Count)];
+		Debug.LogErrorFormat("Wanna use new char {0}", current);
 		return current;
 	}
 
@@ -223,6 +213,7 @@ public class TrialManager : MonoBehaviour
 	}
 }
 
+
 /*
  *	private async void WorkingAsyncCaller()
 	{
@@ -243,6 +234,3 @@ public class TrialManager : MonoBehaviour
  *
  *
  */
-
-
-
