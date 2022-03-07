@@ -11,23 +11,19 @@ using Random = UnityEngine.Random;
 
 public class TrialManager : MonoBehaviour
 {
+	[SerializeField] private TrialGenerator _trialGenerator;
 	[SerializeField] private ShowMan _showMan;
 	[Range(0, 10)] public int _nBack = 1;
+	[Range(0, 100)] public int PercentageNLikely = 60;
+	
 	private float _trialDuration = 2f;
 	private float _interTrialInterval = 0.25f;
 
-	[SerializeField] private List<string> _previousCharacters;
+	private List<string> _previousCharacters;
 	private string _current;
-
-	[Range(0, 100)] public int PercentageNLikely = 60;
-
-
-	private bool _keyed;
-
+	
 	private CancellationTokenSource _cts = new();
-
-	[SerializeField] private TrialGenerator _trialGenerator;
-
+	
 
 	private void Start()
 	{
@@ -43,19 +39,18 @@ public class TrialManager : MonoBehaviour
 
 	private async Task TrialRunner(Trial trial)
 	{
-		_keyed = false;
-		
 		_current = GetWeighedRandomCharacter(trial);
 
 		_showMan.DisplayVariable(_current);
 
 		_trialDuration = trial.block.settings.GetFloat("trialDuration");
-		var trialCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
-		await TimedKeyboardWait(trialCts, _trialDuration);
 		
+		var trialCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+		var keyWasPressed = await TimedKeyboardWait(trialCts, _trialDuration);
+
 		_showMan.ClearTextField();
 
-		if (_keyed == true)
+		if (keyWasPressed)
 		{
 			if (trial.number <= _nBack)
 			{
@@ -70,7 +65,7 @@ public class TrialManager : MonoBehaviour
 				_showMan.InCorrectResponse();
 			}
 		}
-		else if (_keyed == false)
+		else
 		{
 			if (trial.number <= _nBack)
 			{
@@ -85,21 +80,22 @@ public class TrialManager : MonoBehaviour
 				_showMan.CorrectResponse();
 			}
 		}
-		
+
 		_interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
 		await Delayer(_cts, _interTrialInterval);
 
 		_previousCharacters.Insert(0, _current);
+		
 		trial.session.EndCurrentTrial();
 	}
 
-	private async Task TimedKeyboardWait(CancellationTokenSource cancellationTokenSource, float duration)
+	private static async Task<bool> TimedKeyboardWait(CancellationTokenSource cts, float duration)
 	{
 		try
 		{
-			cancellationTokenSource.CancelAfter((int) (duration * 1000));
+			cts.CancelAfter((int) (duration * 1000));
 			
-			await WaitForKeyPress(cancellationTokenSource);
+			return await WaitForKeyPress(cts); 
 		}
 		catch (OperationCanceledException e)
 		{
@@ -108,34 +104,36 @@ public class TrialManager : MonoBehaviour
 		}
 		finally
 		{
-			cancellationTokenSource.Dispose();
+			cts.Dispose();
 		}
 	}
 	
 
-	private static async Task Delayer(CancellationTokenSource ct, float seconds)
+	private static async Task Delayer(CancellationTokenSource cts, float seconds)
 	{
-		await Task.Delay((int)(seconds * 1000), ct.Token);
+		await Task.Delay((int)(seconds * 1000), cts.Token);
 	}
 	
 
-	private async Task WaitForKeyPress(CancellationTokenSource ct)
+	private static async Task<bool> WaitForKeyPress(CancellationTokenSource cts)
 	{
-		while (!Input.GetKeyDown(KeyCode.Space) && ct.IsCancellationRequested == false)
+		while (!Input.GetKeyDown(KeyCode.Space) && cts.IsCancellationRequested == false)
 		{
 			await Task.Yield();
 		}
 		
 		if (Input.GetKeyDown(KeyCode.Space))
 		{
-			_keyed = true;
-			ct.Cancel();
+			cts.Cancel();
+			return true;
 		}
 		
-		if (ct.IsCancellationRequested)
+		if (cts.IsCancellationRequested)
 		{
 			// Debug.Log("No key was hit");
 		}
+
+		return false;
 	}
 	
 
