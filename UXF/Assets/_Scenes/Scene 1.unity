@@ -672,7 +672,7 @@ PrefabInstance:
     - target: {fileID: 114916036141644208, guid: 0a3b6392f04558844bd340e68ced1ff9, type: 3}
       propertyPath: onTrialBegin.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 1288004685}
+      objectReference: {fileID: 1288004684}
     - target: {fileID: 114916036141644208, guid: 0a3b6392f04558844bd340e68ced1ff9, type: 3}
       propertyPath: onTrialEnd.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
@@ -1058,6 +1058,10 @@ PrefabInstance:
       propertyPath: SuccessParticles
       value: 
       objectReference: {fileID: 1963557072}
+    - target: {fileID: 7545240754885210038, guid: eb08d10e44d3749d9854676610860b78, type: 3}
+      propertyPath: PercentageNLikely
+      value: 75
+      objectReference: {fileID: 0}
     - target: {fileID: 7545240754885210039, guid: eb08d10e44d3749d9854676610860b78, type: 3}
       propertyPath: m_RootOrder
       value: 4
@@ -1104,7 +1108,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: eb08d10e44d3749d9854676610860b78, type: 3}
---- !u!114 &1288004685 stripped
+--- !u!114 &1288004684 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7545240754885210038, guid: eb08d10e44d3749d9854676610860b78, type: 3}
   m_PrefabInstance: {fileID: 1288004683}

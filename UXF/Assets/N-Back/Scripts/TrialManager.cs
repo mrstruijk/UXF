@@ -1,44 +1,37 @@
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using TMPro;
 using UnityEngine;
 using UXF;
 using Debug = UnityEngine.Debug;
+using Random = UnityEngine.Random;
 
 
 public class TrialManager : MonoBehaviour
 {
 	[SerializeField] private ShowMan _showMan;
-	[Range(0, 10)] public int nBack = 1;
+	[Range(0, 10)] public int _nBack = 1;
 	private float _trialDuration = 2f;
 	private float _interTrialInterval = 0.25f;
-	public TextMeshProUGUI TextField;
-	public float ChangeTrialTime = 0.25f;
-	public float ChangeITI = 0.1f;
 
-	[SerializeField] public List<string> _previousCharacters;
+	[SerializeField] private List<string> _previousCharacters;
 	private string _current;
 
 	[Range(0, 100)] public int PercentageNLikely = 60;
 
-	public ParticleSystem SuccessParticles;
-	private const float _successTrialInterval = 0.5f;
-	private const float _missedTrialInterval = 0.5f;
 
+	private bool _keyed;
 
-	private CancellationTokenSource _cts = new CancellationTokenSource();
+	private CancellationTokenSource _cts = new();
 
-	private int numberofTrials;
 	[SerializeField] private TrialGenerator _trialGenerator;
 
 
 	private void Start()
 	{
 		_cts = new CancellationTokenSource();
-		_previousCharacters = new List<string>();
 	}
 
 
@@ -50,169 +43,148 @@ public class TrialManager : MonoBehaviour
 
 	private async Task TrialRunner(Trial trial)
 	{
+		_keyed = false;
+		
 		_current = GetWeighedRandomCharacter(trial);
 
-		_showMan.DisplayText(_current);
-
-		_previousCharacters.Add(_current);
+		_showMan.DisplayVariable(_current);
 
 		_trialDuration = trial.block.settings.GetFloat("trialDuration");
 		var trialCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
-		var trialFinished = await Task.WhenAny(WaitForKeyPress(trialCts.Token, trial), Missed(trialCts.Token, trial, _trialDuration));
-		await trialFinished;
+		await TimedKeyboardWait(trialCts, _trialDuration);
+		
+		_showMan.ClearTextField();
 
-		_showMan.DisplayText(null);
-
-		/// _interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
-		await Delayer(trialCts.Token, 5);
-
-		trialCts.Cancel();
-		trialCts.Dispose();
-
-		trial.session.EndCurrentTrial();
-	}
-
-
-	private static async Task Delayer(CancellationToken ct, float seconds)
-	{
-		await Task.Delay((int)(seconds * 1000), ct);
-	}
-
-
-	private async Task Missed(CancellationToken ct, Trial trial, float trialDuration)
-	{
-		await Delayer(ct, trialDuration);
-
-		if (trial.number <= nBack)
+		if (_keyed == true)
 		{
-			return;
-		}
-
-		if (_current == _previousCharacters[_previousCharacters.Count -1 -nBack])
-		{
-			_showMan.DisplayText("MISSED");
-
-			await Delayer(ct, _missedTrialInterval);
-
-			trial.block.settings.SetValue("trialDuration", _trialDuration + ChangeTrialTime);
-			trial.block.settings.SetValue("interTrialInterval", _interTrialInterval + ChangeITI);
-			_trialDuration = trial.block.settings.GetFloat("trialDuration");
-			_interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
-
-			_showMan.DisplayText(null);
-		}
-	}
-
-
-	private async Task WaitForKeyPress(CancellationToken ct, Trial trial)
-	{
-		while (!Input.GetKeyDown(KeyCode.Space) && ct.IsCancellationRequested == false)
-		{
-			// Debug.Log("No key yet");
-			await Task.Yield();
-		}
-
-		if (Input.GetKeyDown(KeyCode.Space))
-		{
-			Debug.Log("Pressee le qui");
-
-			if (trial.number <= nBack)
+			if (trial.number <= _nBack)
 			{
-				InCorrectResponse(ct, trial);
+				_showMan.InCorrectResponse();
 			}
-			else if (_current == _previousCharacters[_previousCharacters.Count -1 -nBack])
+			else if (_current == _previousCharacters[_nBack -1])
 			{
-				CorrectResponse(ct, trial);
+				_showMan.CorrectResponse();
 			}
 			else
 			{
-				InCorrectResponse(ct, trial);
+				_showMan.InCorrectResponse();
 			}
-
-			_trialDuration = trial.settings.GetFloat("trialDuration");
-			_interTrialInterval = trial.settings.GetFloat("interTrialInterval");
 		}
-		else if (ct.IsCancellationRequested == true)
+		else if (_keyed == false)
 		{
-			Debug.Log("Cancellated");
+			if (trial.number <= _nBack)
+			{
+				_showMan.CorrectResponse();
+			}
+			else if (_current == _previousCharacters[_nBack -1])
+			{
+				_showMan.MissedResponse();
+			}
+			else
+			{
+				_showMan.CorrectResponse();
+			}
 		}
+		
+		_interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
+		await Delayer(_cts, _interTrialInterval);
+
+		_previousCharacters.Insert(0, _current);
+		trial.session.EndCurrentTrial();
 	}
 
-
-	private async void InCorrectResponse(CancellationToken ct, Trial trial)
+	private async Task TimedKeyboardWait(CancellationTokenSource cancellationTokenSource, float duration)
 	{
-		_showMan.DisplayText("NOPE");
-
-		trial.settings.SetValue("trialDuration", _trialDuration + ChangeTrialTime);
-		trial.settings.SetValue("interTrialInterval", _interTrialInterval + ChangeITI);
-
-		await Delayer(ct, _missedTrialInterval);
+		try
+		{
+			cancellationTokenSource.CancelAfter((int) (duration * 1000));
+			
+			await WaitForKeyPress(cancellationTokenSource);
+		}
+		catch (OperationCanceledException e)
+		{
+			Debug.Log(e);
+			throw;
+		}
+		finally
+		{
+			cancellationTokenSource.Dispose();
+		}
 	}
+	
 
-
-	private async void CorrectResponse(CancellationToken ct, Trial trial)
+	private static async Task Delayer(CancellationTokenSource ct, float seconds)
 	{
-		TextField.text = "";
-		SuccessParticles.Play();
-
-		if (_trialDuration - ChangeTrialTime > 0)
-		{
-			trial.settings.SetValue("trialDuration", _trialDuration - ChangeTrialTime);
-		}
-
-		if (_interTrialInterval - ChangeITI > 0.1f)
-		{
-			trial.settings.SetValue("interTrialInterval", _interTrialInterval - ChangeITI);
-		}
-
-		await Delayer(ct, _successTrialInterval);
+		await Task.Delay((int)(seconds * 1000), ct.Token);
 	}
+	
+
+	private async Task WaitForKeyPress(CancellationTokenSource ct)
+	{
+		while (!Input.GetKeyDown(KeyCode.Space) && ct.IsCancellationRequested == false)
+		{
+			await Task.Yield();
+		}
+		
+		if (Input.GetKeyDown(KeyCode.Space))
+		{
+			_keyed = true;
+			ct.Cancel();
+		}
+		
+		if (ct.IsCancellationRequested)
+		{
+			// Debug.Log("No key was hit");
+		}
+	}
+	
 
 
 	private string GetWeighedRandomCharacter(Trial trial)
 	{
-		string current;
-
+		string current = null;
+		var chance = Random.Range(0, 101);
+		
 		if (CanUseNBack(trial) == false)
 		{
 			current = _trialGenerator._characterList[Random.Range(0, _trialGenerator._characterList.Count)];
-			Debug.LogErrorFormat("Canno use Nback, has to be {0}", current);
-			return current;
 		}
-
-		if (IsNBackTrial() == true)
+		else if (CanUseNBack(trial) == true && IsNBackTrial(chance) == true)
 		{
-			current = _previousCharacters[_previousCharacters.Count -1 -nBack];
-			Debug.LogErrorFormat("Nback = {0}", current);
-			return current;
+			current = _previousCharacters[_nBack - 1];
 		}
-
-		List<string> excludedList = new();
-		excludedList.AddRange(_trialGenerator._characterList.Where(characters => characters != _previousCharacters[_previousCharacters.Count -1 -nBack]));
-		current = excludedList[Random.Range(0, excludedList.Count)];
-		Debug.LogErrorFormat("Wanna use new char {0}", current);
+		else if (CanUseNBack(trial) == true && IsNBackTrial(chance) == false)
+		{
+			var excludedList = _trialGenerator._characterList.Where(character => character != _previousCharacters[_nBack - 1]).ToList();
+			current = excludedList[Random.Range(0, excludedList.Count)];
+		}
+		else
+		{
+			Debug.LogErrorFormat("This shouldn't happen. CanUseNBack == {0}, IsNBackTrial == {1}", CanUseNBack(trial), IsNBackTrial(chance));
+		}
+		
 		return current;
 	}
 
 
 	private bool CanUseNBack(Trial trial)
 	{
-		return trial.number > nBack;
+		return trial.number > _nBack;
 	}
 
 
-	private bool IsNBackTrial()
+	private bool IsNBackTrial(int chance)
 	{
-		return Random.Range(0, 101) < PercentageNLikely;
+		return chance < PercentageNLikely;
 	}
 
 
 	private void OnDisable()
 	{
+		_previousCharacters.Reverse();
 		_cts.Cancel();
 	}
 }
-
 
 /*
  *	private async void WorkingAsyncCaller()

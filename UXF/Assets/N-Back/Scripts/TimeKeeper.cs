@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
@@ -9,10 +10,10 @@ using UXFExamples;
 
 public class TimeKeeper
 {
-	protected CancellationToken _linkedCt;
+	protected CancellationTokenSource _linkedCt;
 
 
-	public TimeKeeper(CancellationToken linkedToken)
+	public TimeKeeper(CancellationTokenSource linkedToken)
 	{
 		_linkedCt = linkedToken;
 	}
@@ -20,9 +21,10 @@ public class TimeKeeper
 	public async Task Delayer(float seconds)
 	{
 		Debug.Log("No time");
-
-		await Task.Delay((int)(seconds * 1000), _linkedCt);
-
+		
+		await Task.Delay((int)(seconds * 1000), _linkedCt.Token);
+		
+		_linkedCt.Cancel();
 		Debug.LogError("TIME UP");
 	}
 
@@ -41,10 +43,10 @@ public class TimeKeeper
 
 public class KeyKeeper
 {
-	protected CancellationToken _linkedCt;
+	protected CancellationTokenSource _linkedCt;
 
 
-	public KeyKeeper(CancellationToken linkedToken)
+	public KeyKeeper(CancellationTokenSource linkedToken)
 	{
 		_linkedCt = linkedToken;
 	}
@@ -53,14 +55,39 @@ public class KeyKeeper
 	{
 		while (!Input.GetKeyDown(keyCode) && _linkedCt.IsCancellationRequested == false)
 		{
-			Debug.Log("No Key");
-			await Task.Yield();
+			try
+			{
+				Debug.Log("No Key");
+				await Task.Yield();
+			}
+			catch (OperationCanceledException e)
+			{
+				Console.WriteLine(e);
+				throw;
+			}
 		}
-
+		
+		_linkedCt.Cancel();
 		Debug.LogError("WE KEYED A THING");
 		return true;
 	}
 
+	public async Task<bool> WaitForKey2(KeyCode keyCode)
+	{
+		var keyTask = Task.Run(() =>
+		{
+			while (!Input.GetKeyDown(keyCode))
+			{
+				Debug.Log("No key");
+			}
+			
+			Debug.Log("We keyed a thing");
+			_linkedCt.Cancel();
+		});
+
+		await keyTask;
+		return true;
+	}
 
 
 }

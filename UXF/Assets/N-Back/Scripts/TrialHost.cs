@@ -12,6 +12,7 @@ using Random = UnityEngine.Random;
 
 public class TrialHost : MonoBehaviour
 {
+	/*
 	[SerializeField] private ShowMan _showMan;
 	[SerializeField] private TrialGenerator _trialGenerator;
 	private TimeKeeper _timeKeeper;
@@ -53,20 +54,28 @@ public class TrialHost : MonoBehaviour
 
 		var cts = new CancellationTokenSource();
 		var linked = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
-		_timeKeeper = new TimeKeeper(linked.Token);
-		_keyKeeper = new KeyKeeper(linked.Token);
+		_timeKeeper = new TimeKeeper(linked);
+		_keyKeeper = new KeyKeeper(linked);
 
-		Task delayed;
+		Task delayed = null;
 		Debug.LogFormat("1");
 		Task<bool> keyer;
-		Debug.LogFormat("2");
-		var trialFinished = await Task.WhenAny(delayed = _timeKeeper.Delayer(_trialDuration), keyer = _keyKeeper.WaitForKey(KeyCode.Space));
+		Debug.LogFormat("2"); 
+		//var trialFinished = await Task.WhenAny(delayed = _timeKeeper.Delayer(_trialDuration), keyer = _keyKeeper.WaitForKey(KeyCode.Space));
+		//var trialFinished = await Task.WhenAny(_timeKeeper.Delayer(_trialDuration));
+		var completedTasks = await Task.WhenAny(keyer = _keyKeeper.WaitForKey2(KeyCode.Space), _timeKeeper.Delayer(_trialDuration));
 		Debug.LogFormat("3");
-		await trialFinished;
+		
 		Debug.LogFormat("4");
+		linked.Cancel();
+		Debug.LogFormat("5");
+		linked.Dispose();
+		Debug.LogFormat("6");
+		
+		Debug.LogFormat("7");
 		var keypressed = keyer.Result;
 
-		Debug.LogFormat("5");
+		Debug.LogFormat("8");
 		_showMan.DisplayText("");
 
 		if (keypressed == true)
@@ -74,11 +83,7 @@ public class TrialHost : MonoBehaviour
 			_showMan.PlayParticles();
 		}
 
-		Debug.LogFormat("6");
-		linked.Cancel();
-		Debug.LogFormat("7");
-		linked.Dispose();
-		Debug.LogFormat("8");
+		
 
 		trial.session.EndCurrentTrial();
 		Debug.LogFormat("9");
@@ -115,4 +120,5 @@ public class TrialHost : MonoBehaviour
 	{
 		return Random.Range(0, 101) < PercentageNLikely;
 	}
+	*/
 }

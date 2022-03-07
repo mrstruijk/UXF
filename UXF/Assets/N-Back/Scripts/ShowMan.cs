@@ -8,15 +8,38 @@ public class ShowMan : MonoBehaviour
 	[SerializeField] private TextMeshProUGUI _textField;
 	[SerializeField] private ParticleSystem _particles;
 
-
-	public void DisplayText(string displayText)
+	public void ClearTextField()
 	{
-		displayText ??= "";
+		DisplayText();
+	}
+
+	public void DisplayVariable(string variable)
+	{
+		DisplayText(variable);
+	}
+	
+	public void MissedResponse()
+	{
+		DisplayText("MISSED");
+	}
+	
+	public void InCorrectResponse()
+	{
+		DisplayText("NOPE");
+	}
+
+	private void DisplayText(string displayText = "")
+	{
 		_textField.text = displayText;
 	}
 
+	public void CorrectResponse()
+	{
+		ClearTextField();
+		PlayParticles();
+	}
 
-	public void PlayParticles()
+	private void PlayParticles()
 	{
 		_particles.Play();
 	}
