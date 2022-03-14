@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UXF;
 
 
@@ -7,7 +8,7 @@ public class TrialGenerator : MonoBehaviour
 {
 	public List<string> _characterList = new();
 
-	public int numberofTrials;
+	public int NumberOfTrials;
 	public bool UseLetters;
 
 	public void GetInitialValuesFromSettings(Session session)
@@ -23,8 +24,7 @@ public class TrialGenerator : MonoBehaviour
 
 		var numPracticeTrials = session.settings.GetInt("n_practice_trials");
 		var numMainTrials = session.settings.GetInt("n_main_trials");
-		numberofTrials = numPracticeTrials + numMainTrials;
-
+		NumberOfTrials = numPracticeTrials + numMainTrials;
 	}
 
 

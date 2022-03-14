@@ -11,8 +11,12 @@ using Random = UnityEngine.Random;
 
 public class TrialManager : MonoBehaviour
 {
+	[Header("Other Components")]
 	[SerializeField] private TrialGenerator _trialGenerator;
 	[SerializeField] private ShowMan _showMan;
+	[SerializeField] private LogNBackToUXF _log;
+	
+	[Header("Trial Settings")]
 	[Range(1, 10)] public int _nBack = 1;
 	[Range(0, 100)] public int PercentageNLikely = 60;
 	
@@ -55,14 +59,17 @@ public class TrialManager : MonoBehaviour
 			if (trial.number <= _nBack)
 			{
 				_showMan.InCorrectResponse();
+				_log.Wrong();
 			}
 			else if (_current == _previousCharacters[_nBack -1])
 			{
 				_showMan.CorrectResponse();
+				_log.CorrectHit();
 			}
 			else
 			{
 				_showMan.InCorrectResponse();
+				_log.Wrong();
 			}
 		}
 		else
@@ -70,14 +77,17 @@ public class TrialManager : MonoBehaviour
 			if (trial.number <= _nBack)
 			{
 				_showMan.CorrectNoResponse();
+				_log.CorrectNoResponse();
 			}
 			else if (_current == _previousCharacters[_nBack -1])
 			{
 				_showMan.MissedResponse();
+				_log.Missed();
 			}
 			else
 			{
 				_showMan.CorrectNoResponse();
+				_log.CorrectNoResponse();
 			}
 		}
 
