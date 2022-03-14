@@ -1,10 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using System.IO;
+﻿using UnityEngine;
 
 // add the UXF namespace
-using UXF;
 
 namespace UXFExamples
 {

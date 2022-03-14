@@ -1,11 +1,5 @@
 ﻿using System.Collections;
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
-using System.IO;
-using SubjectNerd.Utilities;
 
 namespace UXF.UI
 {

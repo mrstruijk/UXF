@@ -1,10 +1,6 @@
 ﻿using UnityEngine;
-using UnityEditor;
-using UnityEngine.Events;
-using UnityEngine.TestTools;
 using System.Collections.Generic;
 using NUnit.Framework;
-using System.Collections;
 using System.IO;
 
 namespace UXF.Tests

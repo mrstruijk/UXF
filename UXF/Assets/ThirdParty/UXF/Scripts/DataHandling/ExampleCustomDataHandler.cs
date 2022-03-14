@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using System;
 
 /// This is an example custom data handler. It implements the required DataHandler methods and just prints out data to the console. 
 /// You can copy this script, but do some other action instead of printing out the data.

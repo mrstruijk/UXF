@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace UXF
 {
     public static class Constants

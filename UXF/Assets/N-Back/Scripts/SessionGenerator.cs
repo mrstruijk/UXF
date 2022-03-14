@@ -13,7 +13,4 @@ public class SessionGenerator : MonoBehaviour
         var mainBlock = session.CreateBlock(numMainTrials); // block 2
         mainBlock.settings.SetValue("trialDuration", 1);
     }
-
-
-
 }

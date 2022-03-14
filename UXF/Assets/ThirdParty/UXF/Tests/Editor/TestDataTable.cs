@@ -1,12 +1,4 @@
-﻿using UnityEngine;
-using UnityEditor;
-using UnityEngine.TestTools;
-using NUnit.Framework;
-using System;
-using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
+﻿using NUnit.Framework;
 using System.Threading;
 using System.Globalization;
 

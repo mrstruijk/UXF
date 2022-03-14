@@ -13,7 +13,7 @@ public class TrialManager : MonoBehaviour
 {
 	[SerializeField] private TrialGenerator _trialGenerator;
 	[SerializeField] private ShowMan _showMan;
-	[Range(0, 10)] public int _nBack = 1;
+	[Range(1, 10)] public int _nBack = 1;
 	[Range(0, 100)] public int PercentageNLikely = 60;
 	
 	private float _trialDuration = 2f;
@@ -188,24 +188,3 @@ public class TrialManager : MonoBehaviour
 		_cts.Cancel();
 	}
 }
-
-/*
- *	private async void WorkingAsyncCaller()
-	{
-		var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
-		var finished = await Task.WhenAny(WaitForKeyPress(linkedCts.Token), Delayer1(linkedCts.Token));
-		await finished;
-		linkedCts.Cancel();
-		linkedCts.Dispose();
-		_cts = new CancellationTokenSource();
-	}
- *
- *
- * 	private async Task Delayer1(CancellationToken ct)
-	{
-		await Task.Delay(5000, ct);
-		Debug.Log("Time's up!");
-	}
- *
- *
- */
