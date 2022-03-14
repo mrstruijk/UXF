@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 1947671454536205752}
   - component: {fileID: 1947671454536252440}
   m_Layer: 0
-  m_Name: sprite_toonMetalShard_Maarten
+  m_Name: sprite_toonMetalShard_SuccessHit
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

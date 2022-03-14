@@ -2,11 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class ShowMan : MonoBehaviour
 {
 	[SerializeField] private TextMeshProUGUI _textField;
-	[SerializeField] private ParticleSystem _particles;
+	[SerializeField] private ParticleSystem _successHitParticles;
+	[SerializeField] private ParticleSystem _successNoResponseParticles;
 
 	public void ClearTextField()
 	{
@@ -36,11 +38,17 @@ public class ShowMan : MonoBehaviour
 	public void CorrectResponse()
 	{
 		ClearTextField();
-		PlayParticles();
+		PlayParticles(_successHitParticles);
 	}
 
-	private void PlayParticles()
+	public void CorrectNoResponse()
 	{
-		_particles.Play();
+		ClearTextField();
+		PlayParticles(_successNoResponseParticles);
+	}
+	
+	private static void PlayParticles(ParticleSystem particles)
+	{
+		particles.Play();
 	}
 }

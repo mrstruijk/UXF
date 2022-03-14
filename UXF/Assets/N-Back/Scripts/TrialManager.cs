@@ -69,7 +69,7 @@ public class TrialManager : MonoBehaviour
 		{
 			if (trial.number <= _nBack)
 			{
-				_showMan.CorrectResponse();
+				_showMan.CorrectNoResponse();
 			}
 			else if (_current == _previousCharacters[_nBack -1])
 			{
@@ -77,13 +77,18 @@ public class TrialManager : MonoBehaviour
 			}
 			else
 			{
-				_showMan.CorrectResponse();
+				_showMan.CorrectNoResponse();
 			}
 		}
 
 		_interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
 		await Delayer(_cts, _interTrialInterval);
 
+		if (_previousCharacters == null || _previousCharacters.Count == 0)
+		{
+			_previousCharacters = new List<string>();
+		}
+		
 		_previousCharacters.Insert(0, _current);
 		
 		trial.session.EndCurrentTrial();
