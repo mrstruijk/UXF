@@ -5,21 +5,14 @@ using UXF;
 
 public class TrialGenerator : MonoBehaviour
 {
-	public List<string> _characterList = new();
+	public List<string> CharacterList = new();
 
 	public int NumberOfTrials;
 	public bool UseLetters;
 
 	public void GetInitialValuesFromSettings(Session session)
 	{
-		if (UseLetters == true)
-		{
-			_characterList = session.settings.GetStringList("letters");
-		}
-		else
-		{
-			_characterList = session.settings.GetStringList("numbers");
-		}
+		CharacterList = session.settings.GetStringList(UseLetters == true ? "letters" : "numbers");
 
 		var numPracticeTrials = session.settings.GetInt("n_practice_trials");
 		var numMainTrials = session.settings.GetInt("n_main_trials");
@@ -37,7 +30,7 @@ public class TrialGenerator : MonoBehaviour
 	{
 		if (trial == trial.session.LastTrial)
 		{
-			Debug.Log("We done son");
+			Debug.Log("We're done");
 		}
 		else if (trial.session.CurrentTrial != trial.session.CurrentBlock.lastTrial)
 		{

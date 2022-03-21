@@ -3,11 +3,11 @@ using UnityEngine;
 
 public class ShowMan : MonoBehaviour
 {
-	[SerializeField] private TextMeshProUGUI _textField;
-	[SerializeField] private ParticleSystem _successHitParticles;
-	[SerializeField] private ParticleSystem _successNoResponseParticles;
+	[SerializeField] private TextMeshProUGUI TextField;
+	[SerializeField] private ParticleSystem SuccessHitParticles;
+	[SerializeField] private ParticleSystem SuccessNoResponseParticles;
 
-	public void ClearTextField()
+	private void ClearTextField()
 	{
 		DisplayText();
 	}
@@ -29,19 +29,19 @@ public class ShowMan : MonoBehaviour
 
 	private void DisplayText(string displayText = "")
 	{
-		_textField.text = displayText;
+		TextField.text = displayText;
 	}
 
 	public void CorrectResponse()
 	{
 		ClearTextField();
-		PlayParticles(_successHitParticles);
+		PlayParticles(SuccessHitParticles);
 	}
 
 	public void CorrectNoResponse()
 	{
 		ClearTextField();
-		PlayParticles(_successNoResponseParticles);
+		PlayParticles(SuccessNoResponseParticles);
 	}
 	
 	private static void PlayParticles(ParticleSystem particles)

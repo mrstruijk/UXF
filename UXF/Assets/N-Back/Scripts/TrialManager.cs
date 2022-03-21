@@ -133,7 +133,7 @@ public class TrialManager : MonoBehaviour
 		
 		if (CanUseNBack(trial) == false)
 		{
-			current = TrialGenerator._characterList[Random.Range(0, TrialGenerator._characterList.Count)];
+			current = TrialGenerator.CharacterList[Random.Range(0, TrialGenerator.CharacterList.Count)];
 		}
 		else if (CanUseNBack(trial) == true && IsNBackTrial(chance) == true) // && _previousCharacters.Count > _nBack)
 		{
@@ -141,7 +141,7 @@ public class TrialManager : MonoBehaviour
 		}
 		else if (CanUseNBack(trial) == true && IsNBackTrial(chance) == false) // && _previousCharacters.Count > _nBack)
 		{
-			var excludedList = TrialGenerator._characterList.Where(character => character != _previousCharacters[NBack - 1]).ToList();
+			var excludedList = TrialGenerator.CharacterList.Where(character => character != _previousCharacters[NBack - 1]).ToList();
 			current = excludedList[Random.Range(0, excludedList.Count)];
 		}
 		else
