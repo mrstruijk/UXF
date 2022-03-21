@@ -819,13 +819,25 @@ PrefabInstance:
       value: Task
       objectReference: {fileID: 0}
     - target: {fileID: 7545240754885210038, guid: eb08d10e44d3749d9854676610860b78, type: 3}
+      propertyPath: Log
+      value: 
+      objectReference: {fileID: 1665606109}
+    - target: {fileID: 7545240754885210038, guid: eb08d10e44d3749d9854676610860b78, type: 3}
       propertyPath: _log
       value: 
       objectReference: {fileID: 1665606109}
     - target: {fileID: 7545240754885210038, guid: eb08d10e44d3749d9854676610860b78, type: 3}
+      propertyPath: ShowMan
+      value: 
+      objectReference: {fileID: 1868713226}
+    - target: {fileID: 7545240754885210038, guid: eb08d10e44d3749d9854676610860b78, type: 3}
       propertyPath: _showMan
       value: 
       objectReference: {fileID: 1868713226}
+    - target: {fileID: 7545240754885210038, guid: eb08d10e44d3749d9854676610860b78, type: 3}
+      propertyPath: TrialGenerator
+      value: 
+      objectReference: {fileID: 689240987283054799}
     - target: {fileID: 7545240754885210038, guid: eb08d10e44d3749d9854676610860b78, type: 3}
       propertyPath: _trialGenerator
       value: 
@@ -997,6 +1009,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 31455951838338797, guid: 7b01fddf114f84948a6ae47616191ea4, type: 3}
+      propertyPath: Session
+      value: 
+      objectReference: {fileID: 1908572451}
+    - target: {fileID: 31455951838338797, guid: 7b01fddf114f84948a6ae47616191ea4, type: 3}
       propertyPath: _session
       value: 
       objectReference: {fileID: 1908572451}
@@ -1009,6 +1025,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 689240987283054799, guid: cccb2076f01984c57912687f664662a6, type: 3}
+      propertyPath: NumberOfTrials
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 689240987654598760, guid: cccb2076f01984c57912687f664662a6, type: 3}
       propertyPath: m_Name
       value: TaskGenerator
@@ -1126,13 +1146,25 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 760510964016650187, guid: 0b012a0628ac84b79845363d2263e9c5, type: 3}
+      propertyPath: TextField
+      value: 
+      objectReference: {fileID: 994770198}
+    - target: {fileID: 760510964016650187, guid: 0b012a0628ac84b79845363d2263e9c5, type: 3}
       propertyPath: _textField
       value: 
       objectReference: {fileID: 994770198}
     - target: {fileID: 760510964016650187, guid: 0b012a0628ac84b79845363d2263e9c5, type: 3}
+      propertyPath: SuccessHitParticles
+      value: 
+      objectReference: {fileID: 1963557072}
+    - target: {fileID: 760510964016650187, guid: 0b012a0628ac84b79845363d2263e9c5, type: 3}
       propertyPath: _successHitParticles
       value: 
       objectReference: {fileID: 1963557072}
+    - target: {fileID: 760510964016650187, guid: 0b012a0628ac84b79845363d2263e9c5, type: 3}
+      propertyPath: SuccessNoResponseParticles
+      value: 
+      objectReference: {fileID: 1698855871}
     - target: {fileID: 760510964016650187, guid: 0b012a0628ac84b79845363d2263e9c5, type: 3}
       propertyPath: _successNoResponseParticles
       value: 

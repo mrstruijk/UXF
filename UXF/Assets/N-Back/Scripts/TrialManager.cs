@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,8 +19,8 @@ public class TrialManager : MonoBehaviour
 	[Range(1, 10)] public int NBack = 1;
 	[Range(0, 100)] public int PercentageNLikely = 60;
 	
-	private float _trialDuration = 2f;
-	private float _interTrialInterval = 0.25f;
+	private float _trialDuration;
+	private float _interTrialInterval;
 
 	private List<string> _previousCharacters;
 	private string _current;
@@ -27,6 +28,9 @@ public class TrialManager : MonoBehaviour
 	private Coroutine _keyPressedCR;
 	private Coroutine _trialDurationCR;
 
+	private long _startTime;
+	private long _stopTime;
+	private long _rt;
 
 	public void StartTrial(Trial trial)
 	{ 
@@ -41,9 +45,11 @@ public class TrialManager : MonoBehaviour
 		ShowMan.DisplayVariable(_current);
 
 		_trialDuration = trial.block.settings.GetFloat("trialDuration");
-
+		
 		_keyPressedCR = StartCoroutine(WaitForKeyPress(trial));
 		_trialDurationCR = StartCoroutine(WaitForTaskDuration(trial, _trialDuration));
+
+		_startTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
 		while (_keyPressedCR != null && _trialDurationCR != null)
 		{
@@ -68,6 +74,8 @@ public class TrialManager : MonoBehaviour
 	private IEnumerator WaitForTaskDuration(Trial trial, float seconds)
 	{
 		yield return new WaitForSeconds(seconds);
+		
+		LogRT();
 
 		if (_keyPressedCR != null)
 		{
@@ -100,6 +108,8 @@ public class TrialManager : MonoBehaviour
 		{
 			yield return null;
 		}
+		
+		LogRT();
 
 		if (_trialDurationCR != null)
 		{
@@ -123,6 +133,12 @@ public class TrialManager : MonoBehaviour
 		}
 			
 		_keyPressedCR = null;
+	}
+
+	private void LogRT()
+	{
+		_rt = DateTimeOffset.Now.ToUnixTimeMilliseconds() - _startTime;
+		Log.ResponseTime(_rt);
 	}
 
 
