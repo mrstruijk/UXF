@@ -1,11 +1,7 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UXF;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
@@ -68,6 +64,7 @@ public class TrialManager : MonoBehaviour
 		trial.session.EndCurrentTrial();
 	}
 
+	
 	private IEnumerator WaitForTaskDuration(Trial trial, float seconds)
 	{
 		yield return new WaitForSeconds(seconds);
