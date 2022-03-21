@@ -1,9 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UXF;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
@@ -12,12 +14,12 @@ using Random = UnityEngine.Random;
 public class TrialManager : MonoBehaviour
 {
 	[Header("Other Components")]
-	[SerializeField] private TrialGenerator _trialGenerator;
-	[SerializeField] private ShowMan _showMan;
-	[SerializeField] private LogNBackToUXF _log;
+	[SerializeField] private TrialGenerator TrialGenerator;
+	[SerializeField] private ShowMan ShowMan;
+	[SerializeField] private LogNBackToUXF Log;
 	
 	[Header("Trial Settings")]
-	[Range(1, 10)] public int _nBack = 1;
+	[Range(1, 10)] public int NBack = 1;
 	[Range(0, 100)] public int PercentageNLikely = 60;
 	
 	private float _trialDuration = 2f;
@@ -26,141 +28,105 @@ public class TrialManager : MonoBehaviour
 	private List<string> _previousCharacters;
 	private string _current;
 	
-	private CancellationTokenSource _cts = new();
-	
+	private Coroutine _keyPressedCR;
+	private Coroutine _trialDurationCR;
 
-	private void Start()
-	{
-		_cts = new CancellationTokenSource();
+
+	public void StartTrial(Trial trial)
+	{ 
+		StartCoroutine(TrialRunner(trial));
 	}
 
 
-	public async void StartTrial(Trial trial)
-	{
-		await TrialRunner(trial);
-	}
-
-
-	private async Task TrialRunner(Trial trial)
+	private IEnumerator TrialRunner(Trial trial)
 	{
 		_current = GetWeighedRandomCharacter(trial);
 
-		_showMan.DisplayVariable(_current);
+		ShowMan.DisplayVariable(_current);
 
 		_trialDuration = trial.block.settings.GetFloat("trialDuration");
 
-		var trialCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
-		
-		try
+		_keyPressedCR = StartCoroutine(WaitForKeyPress(trial));
+		_trialDurationCR = StartCoroutine(WaitForTaskDuration(trial, _trialDuration));
+
+		while (_keyPressedCR != null && _trialDurationCR != null)
 		{
-			var trialCt = trialCts.Token;
-			var keyPressed = WaitForKeyPress(trialCt);
-			var trialDuration = Delayer(trialCt, _trialDuration);
-			var finishedTrial = await Task.WhenAny(keyPressed, trialDuration);
-			await finishedTrial;
-			trialCts.Cancel();
-			// var keyWasPressed = await TimedKeyboardWait(trialCts, _trialDuration);
-
-			_showMan.ClearTextField();
-
-			if (keyPressed.IsCanceled == false)
-			{
-				if (keyPressed.Result == true)
-				{
-					if (trial.number <= _nBack)
-					{
-						_showMan.InCorrectResponse();
-						_log.Wrong();
-					}
-					else if (_current == _previousCharacters[_nBack - 1])
-					{
-						_showMan.CorrectResponse();
-						_log.CorrectHit();
-					}
-					else
-					{
-						_showMan.InCorrectResponse();
-						_log.Wrong();
-					}
-				}
-				else
-				{
-					if (trial.number <= _nBack)
-					{
-						_showMan.CorrectNoResponse();
-						_log.CorrectNoResponse();
-					}
-					else if (_current == _previousCharacters[_nBack - 1])
-					{
-						_showMan.MissedResponse();
-						_log.Missed();
-					}
-					else
-					{
-						_showMan.CorrectNoResponse();
-						_log.CorrectNoResponse();
-					}
-				}
-			}
-
-
-			_interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
-			await Delayer(trialCt, _interTrialInterval);
-
-			if (_previousCharacters == null || _previousCharacters.Count == 0)
-			{
-				_previousCharacters = new List<string>();
-			}
-
-			_previousCharacters.Insert(0, _current);
-
-			//trialCts.Cancel();
+			yield return null;
 		}
-		finally
-		{
-			trialCts.Dispose();
-		}
+
+		_interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
+
+		yield return new WaitForSeconds(_interTrialInterval);
 		
+		if (_previousCharacters == null || _previousCharacters.Count == 0)
+		{
+			_previousCharacters = new List<string>();
+		}
+
+		_previousCharacters.Insert(0, _current);
+
 		trial.session.EndCurrentTrial();
 	}
 
-	
-
-	private async Task Delayer(CancellationToken ct, float seconds)
+	private IEnumerator WaitForTaskDuration(Trial trial, float seconds)
 	{
-		try
-		{
-			await Task.Delay((int) (seconds * 1000), ct);
-		}
-		finally
-		{
-			//cts?.Cancel();
-			//cts?.Dispose();
-		}
-	}
-	
+		yield return new WaitForSeconds(seconds);
 
-	private async Task<bool> WaitForKeyPress(CancellationToken ct)
-	{
-		while (!Input.GetKeyDown(KeyCode.Space) && ct.IsCancellationRequested == false)
+		if (_keyPressedCR != null)
 		{
-			await Task.Yield();
+			StopCoroutine(_keyPressedCR);
 		}
 		
-		if (Input.GetKeyDown(KeyCode.Space))
+		if (trial.number <= NBack)
 		{
-			//ct?.Cancel();
-			return true;
+			ShowMan.CorrectNoResponse();
+			Log.CorrectNoResponse();
+		}
+		else if (_current == _previousCharacters[NBack - 1])
+		{
+			ShowMan.MissedResponse();
+			Log.Missed();
+		}
+		else
+		{
+			ShowMan.CorrectNoResponse();
+			Log.CorrectNoResponse();
 		}
 		
-		//if (cts.IsCancellationRequested)
+		_trialDurationCR = null;
+	}
+
+	
+	private IEnumerator WaitForKeyPress(Trial trial)
+	{
+		while (!Input.GetKeyDown(KeyCode.Space))
 		{
-			// Debug.Log("No key was hit");
+			yield return null;
 		}
 
-		return false;
+		if (_trialDurationCR != null)
+		{
+			StopCoroutine(_trialDurationCR);
+		}
+
+		if (trial.number <= NBack)
+		{
+			ShowMan.InCorrectResponse();
+			Log.Wrong();
+		}
+		else if (_current == _previousCharacters[NBack - 1])
+		{
+			ShowMan.CorrectResponse();
+			Log.CorrectHit();
+		}
+		else
+		{
+			ShowMan.InCorrectResponse();
+			Log.Wrong();
+		}
+			
+		_keyPressedCR = null;
 	}
-	
 
 
 	private string GetWeighedRandomCharacter(Trial trial)
@@ -170,15 +136,15 @@ public class TrialManager : MonoBehaviour
 		
 		if (CanUseNBack(trial) == false)
 		{
-			current = _trialGenerator._characterList[Random.Range(0, _trialGenerator._characterList.Count)];
+			current = TrialGenerator._characterList[Random.Range(0, TrialGenerator._characterList.Count)];
 		}
 		else if (CanUseNBack(trial) == true && IsNBackTrial(chance) == true) // && _previousCharacters.Count > _nBack)
 		{
-			current = _previousCharacters[_nBack - 1];
+			current = _previousCharacters[NBack - 1];
 		}
 		else if (CanUseNBack(trial) == true && IsNBackTrial(chance) == false) // && _previousCharacters.Count > _nBack)
 		{
-			var excludedList = _trialGenerator._characterList.Where(character => character != _previousCharacters[_nBack - 1]).ToList();
+			var excludedList = TrialGenerator._characterList.Where(character => character != _previousCharacters[NBack - 1]).ToList();
 			current = excludedList[Random.Range(0, excludedList.Count)];
 		}
 		else
@@ -192,7 +158,7 @@ public class TrialManager : MonoBehaviour
 
 	private bool CanUseNBack(Trial trial)
 	{
-		return trial.number > _nBack;
+		return trial.number > NBack;
 	}
 
 
@@ -204,12 +170,11 @@ public class TrialManager : MonoBehaviour
 
 	private void OnDisable()
 	{
-		if (_previousCharacters != null && _previousCharacters.Count > 0)
+		if (_previousCharacters is {Count: > 0})
 		{
 			_previousCharacters.Reverse();
 		}
-	
-		//_cts?.Cancel();
-		//_cts?.Dispose();
+		
+		StopAllCoroutines();
 	}
 }
