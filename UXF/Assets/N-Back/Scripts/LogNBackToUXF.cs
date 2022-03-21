@@ -7,26 +7,42 @@ public class LogNBackToUXF : MonoBehaviour
 
     public void CorrectHit()
     {
-        _session.CurrentTrial.result["Result"] = "Correct_Hit";
+        if (_session.hasInitialised)
+        {
+            _session.CurrentTrial.result["Result"] = "Correct_Hit";
+        }
     }
     
     public void CorrectNoResponse()
     {
-        _session.CurrentTrial.result["Result"] = "Correct_No_Response";
+        if (_session.hasInitialised)
+        {
+            _session.CurrentTrial.result["Result"] = "Correct_No_Response";
+        }
+        
     }
     
     public void Missed()
     {
-        _session.CurrentTrial.result["Result"] = "Failed_Missed";
+        if (_session.hasInitialised)
+        {
+            _session.CurrentTrial.result["Result"] = "Failed_Missed";
+        }
     }
     
     public void Wrong()
     {
-        _session.CurrentTrial.result["Result"] = "Failed_Wrong_Hit";
+        if (_session.hasInitialised)
+        {
+            _session.CurrentTrial.result["Result"] = "Failed_Wrong_Hit";
+        }
     }
 
     private void LogResponseTime()
     {
-        // var rt = _session.CurrentTrial.
+        if (_session.hasInitialised)
+        {
+            // var rt = _session.CurrentTrial.
+        }
     }
 }

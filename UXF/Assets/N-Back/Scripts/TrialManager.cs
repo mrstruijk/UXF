@@ -48,102 +48,112 @@ public class TrialManager : MonoBehaviour
 		_showMan.DisplayVariable(_current);
 
 		_trialDuration = trial.block.settings.GetFloat("trialDuration");
-		
+
 		var trialCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
-		var keyWasPressed = await TimedKeyboardWait(trialCts, _trialDuration);
-
-		_showMan.ClearTextField();
-
-		if (keyWasPressed)
-		{
-			if (trial.number <= _nBack)
-			{
-				_showMan.InCorrectResponse();
-				_log.Wrong();
-			}
-			else if (_current == _previousCharacters[_nBack -1])
-			{
-				_showMan.CorrectResponse();
-				_log.CorrectHit();
-			}
-			else
-			{
-				_showMan.InCorrectResponse();
-				_log.Wrong();
-			}
-		}
-		else
-		{
-			if (trial.number <= _nBack)
-			{
-				_showMan.CorrectNoResponse();
-				_log.CorrectNoResponse();
-			}
-			else if (_current == _previousCharacters[_nBack -1])
-			{
-				_showMan.MissedResponse();
-				_log.Missed();
-			}
-			else
-			{
-				_showMan.CorrectNoResponse();
-				_log.CorrectNoResponse();
-			}
-		}
-
-		_interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
-		await Delayer(_cts, _interTrialInterval);
-
-		if (_previousCharacters == null || _previousCharacters.Count == 0)
-		{
-			_previousCharacters = new List<string>();
-		}
 		
-		_previousCharacters.Insert(0, _current);
+		try
+		{
+			var trialCt = trialCts.Token;
+			var keyPressed = WaitForKeyPress(trialCt);
+			var trialDuration = Delayer(trialCt, _trialDuration);
+			var finishedTrial = await Task.WhenAny(keyPressed, trialDuration);
+			await finishedTrial;
+			trialCts.Cancel();
+			// var keyWasPressed = await TimedKeyboardWait(trialCts, _trialDuration);
+
+			_showMan.ClearTextField();
+
+			if (keyPressed.IsCanceled == false)
+			{
+				if (keyPressed.Result == true)
+				{
+					if (trial.number <= _nBack)
+					{
+						_showMan.InCorrectResponse();
+						_log.Wrong();
+					}
+					else if (_current == _previousCharacters[_nBack - 1])
+					{
+						_showMan.CorrectResponse();
+						_log.CorrectHit();
+					}
+					else
+					{
+						_showMan.InCorrectResponse();
+						_log.Wrong();
+					}
+				}
+				else
+				{
+					if (trial.number <= _nBack)
+					{
+						_showMan.CorrectNoResponse();
+						_log.CorrectNoResponse();
+					}
+					else if (_current == _previousCharacters[_nBack - 1])
+					{
+						_showMan.MissedResponse();
+						_log.Missed();
+					}
+					else
+					{
+						_showMan.CorrectNoResponse();
+						_log.CorrectNoResponse();
+					}
+				}
+			}
+
+
+			_interTrialInterval = trial.block.settings.GetFloat("interTrialInterval");
+			await Delayer(trialCt, _interTrialInterval);
+
+			if (_previousCharacters == null || _previousCharacters.Count == 0)
+			{
+				_previousCharacters = new List<string>();
+			}
+
+			_previousCharacters.Insert(0, _current);
+
+			//trialCts.Cancel();
+		}
+		finally
+		{
+			trialCts.Dispose();
+		}
 		
 		trial.session.EndCurrentTrial();
 	}
 
-	private static async Task<bool> TimedKeyboardWait(CancellationTokenSource cts, float duration)
+	
+
+	private async Task Delayer(CancellationToken ct, float seconds)
 	{
 		try
 		{
-			cts.CancelAfter((int) (duration * 1000));
-			
-			return await WaitForKeyPress(cts); 
-		}
-		catch (OperationCanceledException e)
-		{
-			Debug.Log(e);
-			throw;
+			await Task.Delay((int) (seconds * 1000), ct);
 		}
 		finally
 		{
-			cts.Dispose();
+			//cts?.Cancel();
+			//cts?.Dispose();
 		}
 	}
 	
 
-	private static async Task Delayer(CancellationTokenSource cts, float seconds)
+	private async Task<bool> WaitForKeyPress(CancellationToken ct)
 	{
-		await Task.Delay((int)(seconds * 1000), cts.Token);
-	}
-	
-
-	private static async Task<bool> WaitForKeyPress(CancellationTokenSource cts)
-	{
-		while (!Input.GetKeyDown(KeyCode.Space) && cts.IsCancellationRequested == false)
+		while (!Input.GetKeyDown(KeyCode.Space) && ct.IsCancellationRequested == false)
 		{
 			await Task.Yield();
 		}
 		
 		if (Input.GetKeyDown(KeyCode.Space))
 		{
-			cts.Cancel();
+			//ct?.Cancel();
 			return true;
 		}
 		
-		if (cts.IsCancellationRequested)
+		//if (cts.IsCancellationRequested)
 		{
 			// Debug.Log("No key was hit");
 		}
@@ -162,11 +172,11 @@ public class TrialManager : MonoBehaviour
 		{
 			current = _trialGenerator._characterList[Random.Range(0, _trialGenerator._characterList.Count)];
 		}
-		else if (CanUseNBack(trial) == true && IsNBackTrial(chance) == true)
+		else if (CanUseNBack(trial) == true && IsNBackTrial(chance) == true) // && _previousCharacters.Count > _nBack)
 		{
 			current = _previousCharacters[_nBack - 1];
 		}
-		else if (CanUseNBack(trial) == true && IsNBackTrial(chance) == false)
+		else if (CanUseNBack(trial) == true && IsNBackTrial(chance) == false) // && _previousCharacters.Count > _nBack)
 		{
 			var excludedList = _trialGenerator._characterList.Where(character => character != _previousCharacters[_nBack - 1]).ToList();
 			current = excludedList[Random.Range(0, excludedList.Count)];
@@ -194,7 +204,12 @@ public class TrialManager : MonoBehaviour
 
 	private void OnDisable()
 	{
-		_previousCharacters.Reverse();
-		_cts.Cancel();
+		if (_previousCharacters != null && _previousCharacters.Count > 0)
+		{
+			_previousCharacters.Reverse();
+		}
+	
+		//_cts?.Cancel();
+		//_cts?.Dispose();
 	}
 }
