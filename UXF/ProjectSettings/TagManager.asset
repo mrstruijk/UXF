@@ -3,7 +3,10 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Success_Hit_Particles
+  - Success_NoHit_Particles
+  - Task_TextField
   layers:
   - Default
   - TransparentFX

@@ -1,8 +1,16 @@
 {
   "numbers" : ["0","1","2","3","4","5","6","7","8","9"],
-  "letters" : ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"],
-  "n_practice_trials" : 25,
+  "letters" : ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"],
+  "useLetters" : false,
+  "n_practice_trials" : 10,
+  "practice_trialDuration" : 1.50,
   "n_main_trials" : 50,
-  "trialDuration" : 1,
-  "interTrialInterval" : 0.5
+  "main_trialDuration" : 1,
+  "practice_color" : "Color.blue",
+  "main_color" : "Color.red",
+  "interTrialInterval" : 0.5,
+  "NBack" : 1,
+  "displayText_missed" : "MISS",
+  "displayText_wrong" : "BAD",
+  "percentageNBack" : 60
 }

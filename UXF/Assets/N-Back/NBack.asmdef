@@ -1,0 +1,18 @@
+{
+    "name": "NBack",
+    "rootNamespace": "",
+    "references": [
+        "GUID:1388404d7c53c4558993d186f7899a24",
+        "GUID:a22001e1703174111acd63f3bb5260a2",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

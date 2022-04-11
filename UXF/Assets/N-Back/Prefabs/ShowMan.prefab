@@ -44,6 +44,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed0669adce02c4c38963c001bed97d64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _textField: {fileID: 0}
-  _successHitParticles: {fileID: 0}
-  _successNoResponseParticles: {fileID: 0}
+  s_textField: {fileID: 0}
+  s_successHitParticles: {fileID: 0}
+  s_successNoResponseParticles: {fileID: 0}
